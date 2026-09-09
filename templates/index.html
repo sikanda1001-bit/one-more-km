@@ -7,14 +7,22 @@
     <h1>RUN<br><span class="lime">FURTHER.</span><br><span class="stroke">FASTER.</span></h1>
     <p class="hero-sub">One More KM builds you a full 5K → Marathon plan, tracks every run like Strava, calculates pace, predicts race times and keeps you injury-free. Start where you are.</p>
     <div class="hero-actions">
-      <a href="/program" class="btn btn-lime">CREATE MY PROGRAM →</a>
-      <a href="/dashboard" class="btn btn-ghost">View Dashboard</a>
+      {% if session.get('user_id') %}
+      <a href="/dashboard" class="btn btn-lime">MY DASHBOARD →</a>
+      <a href="/log" class="btn btn-ghost">+ Log a run</a>
+      {% else %}
+      <a href="/register" class="btn btn-lime">CREATE FREE ACCOUNT →</a>
+      <a href="/login" class="btn btn-ghost">Login</a>
+      {% endif %}
     </div>
     <div class="hero-stats">
-      <div class="hstat"><b>{{ stats.total_km }} km</b><span>logged by you</span></div>
-      <div class="hstat"><b>{{ stats.total_runs }}</b><span>runs tracked</span></div>
-      <div class="hstat"><b>{{ stats.streak }}🔥</b><span>day streak</span></div>
+      <div class="hstat"><b>{{ stats.total_km }} km</b><span>{% if session.get('user_id') %}your distance{% else %}logged by you{% endif %}</span></div>
+      <div class="hstat"><b>{{ stats.total_runs }}</b><span>your runs</span></div>
+      <div class="hstat"><b>{{ stats.streak }}🔥</b><span>your streak</span></div>
     </div>
+    {% if not session.get('user_id') %}
+    <p style="color:var(--muted);font-size:13px;margin-top:14px">🔒 Personal accounts: your runs are private — <a href="/register" style="color:var(--lime)">create login</a> to track your own miles.</p>
+    {% endif %}
   </div>
   <div class="track-card">
     <div class="track-head">

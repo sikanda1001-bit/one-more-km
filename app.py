@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, session, jsonify
+from flask import Flask, render_template, request, redirect, session, jsonify, g
 import sqlite3
 import os
+import functools
 from datetime import datetime, date, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "my-secret-key-123")
@@ -41,8 +43,51 @@ def create_database():
             created_at TEXT NOT NULL
         )
     """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+    # Migration: personal runs — add user_id if missing
+    try:
+        cols = [r[1] for r in connection.execute("PRAGMA table_info(runs)").fetchall()]
+        if "user_id" not in cols:
+            connection.execute("ALTER TABLE runs ADD COLUMN user_id INTEGER REFERENCES users(id)")
+    except Exception as e:
+        print(f"migration skipped: {e}")
     connection.commit()
     connection.close()
+
+
+def current_user():
+    uid = session.get("user_id")
+    if not uid:
+        return None
+    conn = get_db()
+    u = conn.execute("SELECT id, username, created_at FROM users WHERE id=?", (uid,)).fetchone()
+    conn.close()
+    return dict(u) if u else None
+
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("user_id"):
+            return redirect("/login?next=" + request.path)
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def is_admin():
+    if session.get("is_admin"):
+        return True
+    # legacy admin session flag
+    if session.get("logged_in"):
+        return True
+    return False
 
 
 def generate_plan(goal, days):
@@ -180,9 +225,12 @@ def fmt_pace(sec):
     return f"{sec // 60}:{sec % 60:02d}"
 
 
-def get_run_stats():
+def get_run_stats(user_id=None):
     conn = get_db()
-    runs = conn.execute("SELECT * FROM runs ORDER BY date DESC, id DESC").fetchall()
+    if user_id:
+        runs = conn.execute("SELECT * FROM runs WHERE user_id=? ORDER BY date DESC, id DESC", (user_id,)).fetchall()
+    else:
+        runs = conn.execute("SELECT * FROM runs ORDER BY date DESC, id DESC").fetchall()
     conn.close()
     runs = [dict(r) for r in runs]
     total_runs = len(runs)
@@ -233,17 +281,21 @@ CHALLENGES = [
 
 @app.route("/")
 def home():
-    stats = get_run_stats()
-    return render_template("index.html", stats=stats, challenges=CHALLENGES[:3])
+    uid = session.get("user_id")
+    stats = get_run_stats(uid)
+    user = current_user()
+    return render_template("index.html", stats=stats, challenges=CHALLENGES[:3], user=user)
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    stats = get_run_stats()
-    return render_template("dashboard.html", stats=stats)
+    stats = get_run_stats(session["user_id"])
+    return render_template("dashboard.html", stats=stats, user=current_user())
 
 
 @app.route("/log", methods=["GET", "POST"])
+@login_required
 def log_run():
     if request.method == "POST":
         run_date = request.form.get("date") or date.today().isoformat()
@@ -253,26 +305,31 @@ def log_run():
         notes = request.form.get("notes", "").strip()[:300]
         if distance > 0 and (minutes > 0 or seconds > 0):
             conn = get_db()
-            conn.execute("INSERT INTO runs (date, distance_km, minutes, seconds, notes, created_at) VALUES (?,?,?,?,?,?)",
-                         (run_date, distance, minutes, seconds, notes, datetime.now().isoformat()))
+            conn.execute("INSERT INTO runs (date, distance_km, minutes, seconds, notes, created_at, user_id) VALUES (?,?,?,?,?,?,?)",
+                         (run_date, distance, minutes, seconds, notes, datetime.now().isoformat(), session["user_id"]))
             conn.commit()
             conn.close()
             return redirect("/dashboard")
-    return render_template("log.html", today=date.today().isoformat())
+    return render_template("log.html", today=date.today().isoformat(), user=current_user())
 
 
 @app.route("/delete-run/<int:run_id>")
+@login_required
 def delete_run(run_id):
     conn = get_db()
-    conn.execute("DELETE FROM runs WHERE id=?", (run_id,))
+    if is_admin():
+        conn.execute("DELETE FROM runs WHERE id=?", (run_id,))
+    else:
+        conn.execute("DELETE FROM runs WHERE id=? AND user_id=?", (run_id, session["user_id"]))
     conn.commit()
     conn.close()
     return redirect("/dashboard")
 
 
 @app.route("/api/chart")
+@login_required
 def chart_api():
-    stats = get_run_stats()
+    stats = get_run_stats(session["user_id"])
     return jsonify({"labels": stats["labels"], "data": stats["data"]})
 
 
@@ -320,39 +377,92 @@ def contact():
     return render_template("contact.html", success=False)
 
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if session.get("user_id"):
+        return redirect("/dashboard")
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        if len(username) < 3 or len(username) > 30:
+            error = "Username must be 3-30 characters."
+        elif len(password) < 4:
+            error = "Password must be at least 4 characters."
+        else:
+            try:
+                conn = get_db()
+                conn.execute("INSERT INTO users (username, password_hash, created_at) VALUES (?,?,?)",
+                             (username, generate_password_hash(password), datetime.now().isoformat()))
+                conn.commit()
+                u = conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+                conn.close()
+                session.clear()
+                session["user_id"] = u["id"]
+                session["username"] = username
+                return redirect("/dashboard")
+            except sqlite3.IntegrityError:
+                error = "That username is taken — try another."
+    return render_template("register.html", error=error)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if session.get("user_id"):
+        return redirect("/dashboard")
+    error = None
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        conn = get_db()
+        u = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        conn.close()
+        if u and check_password_hash(u["password_hash"], password):
+            session.clear()
+            session["user_id"] = u["id"]
+            session["username"] = u["username"]
+            if username == "admin":
+                session["is_admin"] = True
+            nxt = request.args.get("next") or "/dashboard"
+            return redirect(nxt)
+        # legacy admin fallback (before personal accounts existed)
         if username == "admin" and password == "1234":
+            session.clear()
             session["logged_in"] = True
+            session["is_admin"] = True
             return redirect("/admin")
-        return render_template("login.html", error="Incorrect username or password.")
-    return render_template("login.html")
+        error = "Incorrect username or password."
+    return render_template("login.html", error=error)
 
 
 @app.route("/admin")
 def admin():
-    if not session.get("logged_in"):
+    if not is_admin():
         return redirect("/login")
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     messages = connection.execute("SELECT id, name, email, message FROM messages").fetchall()
-    runs = connection.execute("SELECT * FROM runs ORDER BY date DESC").fetchall()
+    try:
+        runs = connection.execute("SELECT runs.*, users.username FROM runs LEFT JOIN users ON runs.user_id=users.id ORDER BY date DESC").fetchall()
+    except Exception:
+        runs = connection.execute("SELECT * FROM runs ORDER BY date DESC").fetchall()
+    try:
+        users = connection.execute("SELECT id, username, created_at FROM users ORDER BY id").fetchall()
+    except Exception:
+        users = []
     connection.close()
-    return render_template("admin.html", messages=messages, runs=runs)
+    return render_template("admin.html", messages=messages, runs=runs, users=users)
 
 
 @app.route("/logout")
 def logout():
-    session.pop("logged_in", None)
-    return redirect("/login")
+    session.clear()
+    return redirect("/")
 
 
 @app.route("/delete/<int:id>")
 def delete_message(id):
-    if not session.get("logged_in"):
+    if not is_admin():
         return redirect("/login")
     connection = sqlite3.connect(DB_PATH)
     connection.execute("DELETE FROM messages WHERE id = ?", (id,))

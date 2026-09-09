@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Admin{% endblock %}
 {% block content %}
-<h1 style="font-size:56px">MESSAGES 📬</h1>
-<a href="/logout" class="logout-button">Logout</a>
+<h1 style="font-size:56px">ADMIN 📬</h1>
+<a href="/logout" class="logout-button">Logout ({{ session.get('username','admin') }})</a>
+<h2 style="font-size:32px;margin:20px 0 10px">Users ({{ users|length }})</h2>
+{% for u in users %}<div class="log-row"><div class="log-date">#{{ u['id'] }}</div><div><b>{{ u['username'] }}</b><br><span class="log-pace">{{ u['created_at'] }}</span></div></div>{% endfor %}
 <h2 style="font-size:32px;margin:20px 0 10px">Inbox ({{ messages|length }})</h2>
 {% if messages %}{% for m in messages %}
 <div class="message"><h2>{{ m['name'] }}</h2><p><strong>Email:</strong> {{ m['email'] }}</p><p>{{ m['message'] }}</p><a href="/delete/{{ m['id'] }}" class="delete-button">Delete</a></div>
 {% endfor %}{% else %}<p style="color:var(--muted)">No messages yet.</p>{% endif %}
-<h2 style="font-size:32px;margin:30px 0 10px">Logged Runs ({{ runs|length }})</h2>
-{% for r in runs %}<div class="log-row"><div class="log-date">{{ r['date'] }}</div><div><span class="log-dist">{{ r['distance_km'] }} km</span><br><span class="log-pace">{{ r['minutes'] }}:{{ "%02d"|format(r['seconds']) }} • {{ r['notes'] }}</span></div><a href="/delete-run/{{ r['id'] }}" class="delete-button">Delete</a></div>{% endfor %}
+<h2 style="font-size:32px;margin:30px 0 10px">All Runs ({{ runs|length }}) — with owners</h2>
+{% for r in runs %}<div class="log-row"><div class="log-date">{{ r['date'] }}</div><div><span class="log-dist">{{ r['distance_km'] }} km</span> <small style="color:var(--lime)">👤 {{ r['username'] or 'old/no-user' }}</small><br><span class="log-pace">{{ r['minutes'] }}:{{ "%02d"|format(r['seconds']) }} • {{ r['notes'] }}</span></div><a href="/delete-run/{{ r['id'] }}" class="delete-button">Delete</a></div>{% endfor %}
 {% endblock %}

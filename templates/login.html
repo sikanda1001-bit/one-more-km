@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Admin Login{% endblock %}
+{% block title %}Login - One More KM{% endblock %}
 {% block content %}
 <main class="narrow" style="padding:0;text-align:center">
-<h1 style="font-size:56px">ADMIN 🔐</h1>
+<h1 style="font-size:clamp(48px,6vw,72px)">WELCOME BACK 👋</h1>
+<p style="color:var(--muted)">Log in to see your personal runs, dashboard & streaks.</p>
 {% if error %}<p class="error-message">{{ error }}</p>{% endif %}
 <form method="POST" action="/login" class="plan-form">
   <input type="text" name="username" placeholder="Username" required>
   <input type="password" name="password" placeholder="Password" required>
-  <button type="submit">LOGIN</button>
-  <p class="days-caption" style="text-align:center">Hint for demo: admin / 1234</p>
+  <button type="submit">LOGIN →</button>
+  <p class="days-caption" style="text-align:center">No account? <a href="/register" style="color:var(--lime)">Create one free</a></p>
 </form>
 </main>
 {% endblock %}

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - One More KM{% endblock %}
 {% block content %}
-<div class="eyebrow"><span class="pulse-dot"></span> Your Strava-style hub</div>
-<h1 style="font-size:clamp(56px,7vw,92px)">DASHBOARD <span class="accent">📊</span></h1>
-<p style="color:var(--muted);margin-bottom:10px">Every run you log powers totals, streaks, chart & badges.</p>
+<div class="eyebrow"><span class="pulse-dot"></span> Your private hub • 👤 {{ session.get('username') }}</div>
+<h1 style="font-size:clamp(56px,7vw,92px)">MY RUNS <span class="accent">📊</span></h1>
+<p style="color:var(--muted);margin-bottom:10px">Only you can see these — every run you log powers your totals, streaks, chart & badges.</p>
 
 <div class="dash-stats">
   <div class="dstat lime"><span>Total distance</span><b>{{ stats.total_km }} km</b></div>

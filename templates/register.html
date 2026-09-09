@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Create account - One More KM{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0;text-align:center">
+<h1 style="font-size:clamp(48px,6vw,72px)">JOIN ONE MORE KM 🚀</h1>
+<p style="color:var(--muted)">Create your personal login. Your runs stay private to you.</p>
+{% if error %}<p class="error-message">{{ error }}</p>{% endif %}
+<form method="POST" action="/register" class="plan-form">
+  <div class="field-group"><p class="field-label">Pick a username</p><input type="text" name="username" placeholder="e.g. speedy_alu" minlength="3" maxlength="30" required></div>
+  <div class="field-group"><p class="field-label">Pick a password</p><input type="password" name="password" placeholder="Min 4 characters" minlength="4" required></div>
+  <button type="submit">CREATE MY ACCOUNT →</button>
+  <p class="days-caption" style="text-align:center">Already have one? <a href="/login" style="color:var(--lime)">Log in</a></p>
+</form>
+</main>
+{% endblock %}
