@@ -4,10 +4,14 @@ import os
 from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
-app.secret_key = "my-secret-key-123"
+app.secret_key = os.environ.get("SECRET_KEY", "my-secret-key-123")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "messages.db")
+# Vercel filesystem is read-only except /tmp — use /tmp DB there
+if os.environ.get("VERCEL"):
+    DB_PATH = "/tmp/messages.db"
+else:
+    DB_PATH = os.path.join(BASE_DIR, "messages.db")
 
 
 def get_db():
@@ -393,7 +397,11 @@ def generate():
     return "Sorry, we don't have a program for that combination yet."
 
 
-create_database()
+try:
+    create_database()
+except Exception as e:
+    # On read-only filesystems, don't crash import — routes will retry
+    print(f"DB init skipped: {e}")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
