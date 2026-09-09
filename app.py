@@ -9,21 +9,100 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "my-secret-key-123")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Vercel filesystem is read-only except /tmp — use /tmp DB there
-if os.environ.get("VERCEL"):
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+# Vercel filesystem is read-only except /tmp — use /tmp DB there (ephemeral!)
+if os.environ.get("VERCEL") and not DATABASE_URL:
     DB_PATH = "/tmp/messages.db"
 else:
     DB_PATH = os.path.join(BASE_DIR, "messages.db")
 
+USE_PG = DATABASE_URL.startswith("postgres")
+
 
 def get_db():
+    if USE_PG:
+        import psycopg2
+        import psycopg2.extras
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        # wrap execute() so existing `?` placeholders work with postgres `%s`
+        orig_cursor = conn.cursor()
+        class Wrap:
+            def __init__(self, cur, con):
+                self._cur = cur
+                self._con = con
+            def execute(self, sql, params=()):
+                return self._cur.execute(sql.replace("?", "%s"), params)
+            def fetchone(self):
+                return self._cur.fetchone()
+            def fetchall(self):
+                return self._cur.fetchall()
+            def __getattr__(self, n):
+                return getattr(self._cur, n)
+        class ConWrap:
+            def __init__(self, con):
+                self._con = con
+            def execute(self, sql, params=()):
+                cur = self._con.cursor()
+                cur.execute(sql.replace("?", "%s"), params)
+                return cur
+            def commit(self):
+                return self._con.commit()
+            def close(self):
+                return self._con.close()
+        return ConWrap(conn)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 
+def _connect_raw():
+    if USE_PG:
+        import psycopg2
+        import psycopg2.extras
+        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    return sqlite3.connect(DB_PATH)
+
+
 def create_database():
-    connection = sqlite3.connect(DB_PATH)
+    connection = _connect_raw()
+    if USE_PG:
+        cur = connection.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                message TEXT NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS runs (
+                id SERIAL PRIMARY KEY,
+                date TEXT NOT NULL,
+                distance_km DOUBLE PRECISION NOT NULL,
+                minutes INTEGER NOT NULL,
+                seconds INTEGER NOT NULL,
+                notes TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                user_id INTEGER REFERENCES users(id)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        # older PG tables without user_id
+        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name='runs'")
+        cols = [r["column_name"] for r in cur.fetchall()]
+        if "user_id" not in cols:
+            cur.execute("ALTER TABLE runs ADD COLUMN user_id INTEGER REFERENCES users(id)")
+        connection.commit()
+        connection.close()
+        return
     connection.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -369,7 +448,7 @@ def contact():
         name = request.form["name"]
         email = request.form["email"]
         message = request.form["message"]
-        connection = sqlite3.connect(DB_PATH)
+        connection = get_db()
         connection.execute("INSERT INTO messages (name, email, message) VALUES (?, ?, ?)", (name, email, message))
         connection.commit()
         connection.close()
@@ -401,7 +480,7 @@ def register():
                 session["user_id"] = u["id"]
                 session["username"] = username
                 return redirect("/dashboard")
-            except sqlite3.IntegrityError:
+            except Exception:
                 error = "That username is taken — try another."
     return render_template("register.html", error=error)
 
@@ -439,8 +518,7 @@ def login():
 def admin():
     if not is_admin():
         return redirect("/login")
-    connection = sqlite3.connect(DB_PATH)
-    connection.row_factory = sqlite3.Row
+    connection = get_db()
     messages = connection.execute("SELECT id, name, email, message FROM messages").fetchall()
     try:
         runs = connection.execute("SELECT runs.*, users.username FROM runs LEFT JOIN users ON runs.user_id=users.id ORDER BY date DESC").fetchall()
@@ -464,7 +542,7 @@ def logout():
 def delete_message(id):
     if not is_admin():
         return redirect("/login")
-    connection = sqlite3.connect(DB_PATH)
+    connection = get_db()
     connection.execute("DELETE FROM messages WHERE id = ?", (id,))
     connection.commit()
     connection.close()
