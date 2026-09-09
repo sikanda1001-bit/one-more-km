@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Create Your Plan - One More KM{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0">
+<div class="eyebrow"><span class="pulse-dot"></span> NRC-style plan builder</div>
+<h1 style="font-size:clamp(52px,7vw,84px)">BUILD YOUR PLAN 🗓️</h1>
+<p style="color:var(--muted)">Pick distance + days/week — we lay out build → taper → race week.</p>
+<form action="/generate" method="POST" class="plan-form">
+  <div class="field-group">
+    <p class="field-label">Goal</p>
+    <div class="goal-grid">
+      <input type="radio" id="goal-5k" name="goal" value="5k" {% if preselect_goal=="5k" %}checked{% endif %}>
+      <label for="goal-5k" class="goal-card"><span class="goal-value">5K</span><span class="goal-desc">8 wks • Sharpen speed</span></label>
+      <input type="radio" id="goal-10k" name="goal" value="10k" {% if preselect_goal=="10k" %}checked{% endif %}>
+      <label for="goal-10k" class="goal-card"><span class="goal-value">10K</span><span class="goal-desc">10 wks • Build engine</span></label>
+      <input type="radio" id="goal-half" name="goal" value="half" {% if preselect_goal=="half" %}checked{% endif %}>
+      <label for="goal-half" class="goal-card"><span class="goal-value">HALF</span><span class="goal-desc">12 wks • Go distance</span></label>
+      <input type="radio" id="goal-marathon" name="goal" value="marathon" {% if preselect_goal=="marathon" %}checked{% endif %}>
+      <label for="goal-marathon" class="goal-card"><span class="goal-value">MARATHON</span><span class="goal-desc">16 wks • Ultimate test</span></label>
+    </div>
+  </div>
+  <div class="field-group">
+    <p class="field-label">Days per week</p>
+    <div class="days-grid">
+      <input type="radio" id="days-3" name="days" value="3" {% if preselect_days=="3" %}checked{% endif %}><label for="days-3" class="day-pill">3</label>
+      <input type="radio" id="days-4" name="days" value="4" {% if preselect_days=="4" %}checked{% endif %}><label for="days-4" class="day-pill">4</label>
+      <input type="radio" id="days-5" name="days" value="5" {% if preselect_days=="5" %}checked{% endif %}><label for="days-5" class="day-pill">5</label>
+      <input type="radio" id="days-6" name="days" value="6" {% if preselect_days=="6" %}checked{% endif %}><label for="days-6" class="day-pill">6</label>
+    </div>
+    <p class="days-caption">How many days can you commit? Consistency beats volume.</p>
+  </div>
+  <button type="submit" class="cta-button">CREATE MY PLAN →</button>
+</form>
+</main>
+{% endblock %}

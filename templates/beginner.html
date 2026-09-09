@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Beginner Check-In{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0">
+<div class="eyebrow"><span class="pulse-dot"></span> New runner? Start here</div>
+<h1 style="font-size:clamp(52px,7vw,84px)">NEW TO RUNNING? 👋</h1>
+<p style="color:var(--muted)">Tell us your longest run. We'll calc pace + recommend 5K → Marathon.</p>
+<form action="/beginner" method="POST" class="plan-form">
+  <div class="field-group"><p class="field-label">Longest distance (km)</p><input type="number" name="distance" step="0.1" min="0.1" placeholder="e.g. 3.5" required><p class="days-caption">In kilometres</p></div>
+  <div class="field-group"><p class="field-label">Time it took</p>
+    <div class="time-input-row">
+      <div class="time-input"><input type="number" name="minutes" min="0" placeholder="0" required><p class="days-caption">Minutes</p></div>
+      <div class="time-input"><input type="number" name="seconds" min="0" max="59" placeholder="0" required><p class="days-caption">Seconds</p></div>
+    </div>
+  </div>
+  <button type="submit" class="cta-button">CALCULATE MY PACE →</button>
+</form>
+</main>
+{% endblock %}

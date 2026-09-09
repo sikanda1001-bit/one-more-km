@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Your Pace{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0">
+<h1 style="font-size:clamp(48px,6vw,76px)">HERE'S WHERE YOU STAND 💪</h1>
+<div class="pace-hero">
+  <div class="pace-value">{{ pace_min }}:{{ "%02d"|format(pace_sec) }}</div>
+  <div class="pace-unit">per km • from {{ distance_km }} km</div>
+</div>
+<div class="recommendation-card">
+  <p class="field-label">Suggested starting point</p>
+  <span class="goal-value">{{ recommendation.goal_label }}</span>
+  <p>{{ recommendation.distance_note }}</p>
+  <p>{{ recommendation.pace_note }}</p>
+</div>
+<a href="/program?goal={{ recommendation.goal }}&days={{ recommendation.days }}" class="btn btn-lime" style="width:100%">BUILD THIS PLAN →</a>
+<br><br><a href="/tools" class="btn btn-ghost" style="width:100%">OPEN PACE LAB + RACE PREDICTOR</a>
+</main>
+{% endblock %}

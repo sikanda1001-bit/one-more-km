@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}About - One More KM{% endblock %}
+{% block content %}
+<div class="eyebrow"><span class="pulse-dot"></span> Our mission</div>
+<h1 style="font-size:clamp(52px,7vw,88px)">ABOUT ONE MORE KM</h1>
+<p style="color:var(--muted);max-width:640px">A running platform to build consistency, understand progress, and know what to do next — inspired by Strava tracking + Nike coaching, rebuilt for 2026.</p>
+<p class="mission-line">Keep moving forward.</p>
+<div class="lane-divider"><span></span><span></span><span></span></div>
+<div class="grid2">
+  <div class="card"><p class="field-label">What you get</p>
+    <ul class="feature-list">
+      <li>Structured 5K → Marathon plans</li>
+      <li>Strava-style run logger + dashboard</li>
+      <li>Pace, race predictor & training zones</li>
+      <li>Challenges, streaks & badges</li>
+      <li>Recovery & injury guidance</li>
+      <li>Dark-mode-first pro design</li>
+    </ul>
+  </div>
+  <div class="card lime-glow" style="text-align:center">
+    <p class="field-label">Our philosophy</p>
+    <p class="philosophy-line">Start where you are.</p>
+    <p class="philosophy-line">Run what you can.</p>
+    <p class="philosophy-line">Improve gradually.</p>
+    <p class="philosophy-line philosophy-accent">Then go one more km.</p>
+    <br><a href="/program" class="btn btn-lime">START YOUR JOURNEY →</a>
+  </div>
+</div>
+{% endblock %}

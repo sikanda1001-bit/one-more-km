@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}One More KM — Build Your Running Plan{% endblock %}
+{% block content %}
+<div class="hero">
+  <div>
+    <div class="eyebrow"><span class="pulse-dot"></span> Strava-style tracking • NRC-style coaching • Free</div>
+    <h1>RUN<br><span class="lime">FURTHER.</span><br><span class="stroke">FASTER.</span></h1>
+    <p class="hero-sub">One More KM builds you a full 5K → Marathon plan, tracks every run like Strava, calculates pace, predicts race times and keeps you injury-free. Start where you are.</p>
+    <div class="hero-actions">
+      <a href="/program" class="btn btn-lime">CREATE MY PROGRAM →</a>
+      <a href="/dashboard" class="btn btn-ghost">View Dashboard</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><b>{{ stats.total_km }} km</b><span>logged by you</span></div>
+      <div class="hstat"><b>{{ stats.total_runs }}</b><span>runs tracked</span></div>
+      <div class="hstat"><b>{{ stats.streak }}🔥</b><span>day streak</span></div>
+    </div>
+  </div>
+  <div class="track-card">
+    <div class="track-head">
+      <span class="live-badge"><i></i> LIVE TRACKING</span>
+      <span style="color:var(--muted);font-size:13px;font-weight:700">Morning Run • 7:12 AM</span>
+    </div>
+    <div class="track-map">
+      <svg class="route-svg" viewBox="0 0 300 180" fill="none">
+        <path d="M20 150 C60 140 50 100 90 95 C130 90 120 50 160 45 C200 40 210 80 245 70 C270 63 275 40 285 35"
+          stroke="#CCFF00" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="20" cy="150" r="8" fill="#4DD4AC"/><circle cx="285" cy="35" r="8" fill="#FF5A36"/>
+      </svg>
+    </div>
+    <div class="track-grid">
+      <div class="tmetric"><b>5.24</b><span>km distance</span></div>
+      <div class="tmetric"><b>5:42</b><span>avg pace</span></div>
+      <div class="tmetric"><b>29:51</b><span>time</span></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:8px"><span>TRAINING ZONES</span><span>HR 142 BPM</span></div>
+    <div class="route-bar"><i class="z1"></i><i class="z2"></i><i class="z3"></i><i class="z4"></i><i class="z5"></i></div>
+    <div style="margin-top:16px;display:flex;gap:10px">
+      <a href="/log" class="btn btn-lime" style="flex:1;padding:13px">+ LOG A RUN</a>
+      <a href="/tools" class="btn btn-ghost" style="flex:1;padding:13px">PACE TOOL</a>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head">
+    <h2>EVERYTHING A <span class="accent">PRO APP</span> HAS</h2>
+    <p>Copied from the best: Strava activity + leaderboards, Nike guided plans, Garmin zones — all in one dark, fast site.</p>
+  </div>
+  <div class="grid4">
+    <div class="card lime-glow"><span class="tag">NRC-style</span><span class="card-emoji">🗓️</span><h3>Smart Plans</h3><p>8–16 week 5K, 10K, Half & Marathon programs with build, taper & race week. Pick 3–6 days/week.</p></div>
+    <div class="card"><span class="tag orange">Strava-style</span><span class="card-emoji">📍</span><h3>Run Logger</h3><p>Log distance, time & notes. Auto pace, totals, streaks, 14-day chart & achievements.</p></div>
+    <div class="card"><span class="tag blue">Garmin-style</span><span class="card-emoji">⚡</span><h3>Pace + Zones</h3><p>Pace calculator, Riegel race predictor (5K→Marathon) & 5 training zones.</p></div>
+    <div class="card"><span class="tag purple">Community</span><span class="card-emoji">🏆</span><h3>Challenges</h3><p>Join monthly volume, streak & distance challenges. Stay motivated with the club.</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>PICK YOUR <span class="accent">DISTANCE</span></h2><a href="/program" class="btn btn-ghost">All plans →</a></div>
+  <div class="grid4">
+    <a href="/program?goal=5k&days=3" style="text-decoration:none"><div class="card"><span class="tag">8 WEEKS</span><div class="stat-big">5K <small>beginner</small></div><p>Sharpen speed. 3–4 runs/week. Peak 8 km long run.</p><br><span style="color:var(--lime);font-weight:800">Start →</span></div></a>
+    <a href="/program?goal=10k&days=4" style="text-decoration:none"><div class="card"><span class="tag orange">10 WEEKS</span><div class="stat-big">10K <small>endurance</small></div><p>Build real engine. Tempo + speed + long runs.</p><br><span style="color:var(--lime);font-weight:800">Start →</span></div></a>
+    <a href="/program?goal=half&days=4" style="text-decoration:none"><div class="card"><span class="tag blue">12 WEEKS</span><div class="stat-big">21K <small>half</small></div><p>Go the distance. Peak 18 km, 2-week taper.</p><br><span style="color:var(--lime);font-weight:800">Start →</span></div></a>
+    <a href="/program?goal=marathon&days=5" style="text-decoration:none"><div class="card lime-glow"><span class="tag">16 WEEKS</span><div class="stat-big">42K <small>marathon</small></div><p>The ultimate test. Peak 32 km long run.</p><br><span style="color:var(--lime);font-weight:800">Start →</span></div></a>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>TRENDING <span class="accent">CHALLENGES</span></h2><a href="/challenges" class="btn btn-ghost">Join →</a></div>
+  <div class="grid3">
+    {% for c in challenges %}
+    <div class="card challenge-card"><span style="font-size:32px">{{ c.emoji }}</span><h3>{{ c.title }}</h3><p>{{ c.desc }}</p>
+      <div class="challenge-progress"><i style="width:{{ c.progress }}%"></i></div>
+      <small style="color:var(--muted)">{{ c.progress }}% of club • {{ c.joined }} joined</small>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="section">
+  <div class="card lime-glow" style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center">
+    <div><h2 style="font-size:52px">NOT SURE WHERE TO START?</h2><p>Tell us your longest run. We'll calculate pace, recommend 5K → Marathon, and build the plan.</p></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap"><a href="/beginner" class="btn btn-lime">CHECK MY LEVEL</a><a href="/tools" class="btn btn-ghost">RACE PREDICTOR</a></div>
+  </div>
+</div>
+{% endblock %}

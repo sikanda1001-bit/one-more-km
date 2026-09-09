@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - One More KM{% endblock %}
+{% block content %}
+<div class="eyebrow"><span class="pulse-dot"></span> Your Strava-style hub</div>
+<h1 style="font-size:clamp(56px,7vw,92px)">DASHBOARD <span class="accent">📊</span></h1>
+<p style="color:var(--muted);margin-bottom:10px">Every run you log powers totals, streaks, chart & badges.</p>
+
+<div class="dash-stats">
+  <div class="dstat lime"><span>Total distance</span><b>{{ stats.total_km }} km</b></div>
+  <div class="dstat orange"><span>Total runs</span><b>{{ stats.total_runs }}</b></div>
+  <div class="dstat blue"><span>Avg pace</span><b>{{ stats.avg_pace }}</b></div>
+  <div class="dstat teal"><span>Day streak</span><b>{{ stats.streak }} 🔥</b></div>
+</div>
+
+<div class="grid2">
+  <div class="chart-box">
+    <h3 style="font-size:28px;margin-bottom:6px">LAST 14 DAYS</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Kilometres per day — like Strava training log</p>
+    <canvas id="runChart"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3 style="font-size:28px;margin-bottom:6px">ACHIEVEMENTS 🏅</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Unlock badges as you pile up miles</p>
+    {% if stats.achievements %}
+      <div style="display:grid;gap:10px">
+      {% for emoji, title, desc in stats.achievements %}
+        <div style="display:flex;gap:12px;align-items:center;background:#0F0F14;border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+          <span style="font-size:28px">{{ emoji }}</span>
+          <div><b>{{ title }}</b><br><small style="color:var(--muted)">{{ desc }}</small></div>
+        </div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:var(--muted)">No badges yet — <a href="/log" style="color:var(--lime)">log your first run</a> to unlock 🔥 First Run.</p>
+    {% endif %}
+    <a href="/log" class="btn btn-lime" style="width:100%;margin-top:16px">+ LOG A RUN</a>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>RECENT RUNS</h2><a href="/log" class="btn btn-ghost">+ New</a></div>
+  {% if stats.runs %}
+    {% for r in stats.runs[:10] %}
+    <div class="log-row">
+      <div class="log-date">{{ r.date }}</div>
+      <div><span class="log-dist">{{ r.distance_km }} km</span><br><span class="log-pace">{{ r.minutes }}:{{ "%02d"|format(r.seconds) }} total • {{ r.notes or 'No notes' }}</span></div>
+      <div class="log-pace">{{ ((r.minutes*60+r.seconds)/r.distance_km//60)|int }}:{{ "%02d"|format(((r.minutes*60+r.seconds)/r.distance_km%60)|round|int) }}/km</div>
+      <a href="/delete-run/{{ r.id }}" style="color:var(--muted);text-decoration:none;font-size:13px" onclick="return confirm('Delete this run?')">✕</a>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card"><h3>No runs yet</h3><p>Log your first run and watch this dashboard come alive with charts and streaks.</p><br><a href="/log" class="btn btn-lime">LOG FIRST RUN</a></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const ctx = document.getElementById('runChart');
+if (ctx) {
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ stats.labels|tojson }},
+      datasets: [{ data: {{ stats.data|tojson }}, backgroundColor: '#CCFF00', borderRadius: 6 }]
+    },
+    options: { plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#9AA0AE'}}, y:{ticks:{color:'#9AA0AE'}, grid:{color:'#222'}} } }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Challenges - One More KM{% endblock %}
+{% block content %}
+<div class="eyebrow"><span class="pulse-dot"></span> Community • like Strava challenges</div>
+<h1 style="font-size:clamp(56px,7vw,92px)">CHALLENGES <span class="accent">🏆</span></h1>
+<p style="color:var(--muted);margin-bottom:24px">Join a challenge, log runs, stay accountable. Tap Join — progress syncs from your logged runs.</p>
+<div class="grid3">
+{% for c in challenges %}
+<div class="card challenge-card">
+  <span style="font-size:40px">{{ c.emoji }}</span>
+  <span class="tag">{{ c.target }}</span>
+  <h3>{{ c.title }}</h3>
+  <p>{{ c.desc }}</p>
+  <div class="challenge-progress"><i style="width:{{ c.progress }}%"></i></div>
+  <small style="color:var(--muted)">{{ c.progress }}% completed by club • {{ c.joined }} runners in</small>
+  <button class="join-btn">Join Challenge</button>
+</div>
+{% endfor %}
+</div>
+<div class="card lime-glow" style="margin-top:26px;text-align:center">
+  <h2 style="font-size:40px">MAKE YOUR OWN STREAK?</h2>
+  <p>Log 2km+ daily for 7 days to unlock ⚡ 7-Day Streak.</p><br>
+  <a href="/log" class="btn btn-lime">LOG TODAY'S RUN</a>
+</div>
+{% endblock %}

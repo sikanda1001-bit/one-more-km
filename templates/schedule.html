@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Your Plan {{ goal }} - One More KM{% endblock %}
+{% block content %}
+<div class="eyebrow"><span class="pulse-dot"></span> Your custom program is ready</div>
+<h1 style="font-size:clamp(52px,7vw,88px)">YOUR {{ goal }} PLAN 🏃</h1>
+<p style="color:var(--muted)">🟢 Easy &nbsp; 🟠 Speed &nbsp; 🟣 Tempo &nbsp; 🟡 Long &nbsp; 🔴 Race — taper weeks are blue.</p>
+
+{% for week in schedule %}
+<div class="week-card">
+  <div class="week-head">
+    <div class="week-title">{{ week.week }}</div>
+    {% if week.phase=='race' %}<span class="week-badge race">🏁 RACE WEEK</span>
+    {% elif week.phase=='taper' %}<span class="week-badge taper">TAPER</span>
+    {% elif week.phase=='base' %}<span class="week-badge">BASE</span>
+    {% else %}<span class="week-badge">BUILD</span>{% endif %}
+  </div>
+  <div class="run-chips">
+  {% for run in week.runs %}
+    {% if 'Easy' in run %}<span class="run-chip"><i class="dot-easy"></i>{{ run }}</span>
+    {% elif 'Speed' in run %}<span class="run-chip"><i class="dot-speed"></i>{{ run }}</span>
+    {% elif 'Tempo' in run %}<span class="run-chip"><i class="dot-tempo"></i>{{ run }}</span>
+    {% elif 'RACE' in run %}<span class="run-chip"><i class="dot-race"></i><b>{{ run }}</b></span>
+    {% else %}<span class="run-chip"><i class="dot-long"></i><b>{{ run }}</b></span>{% endif %}
+  {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+  <a href="/program" class="btn btn-ghost">← NEW PLAN</a>
+  <a href="/log" class="btn btn-lime">LOG THIS TRAINING →</a>
+  <button class="btn btn-ghost" onclick="window.print()">🖨️ PRINT</button>
+</div>
+{% endblock %}

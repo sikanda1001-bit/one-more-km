@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0;text-align:center">
+<h1 style="font-size:clamp(52px,7vw,84px)">CONTACT 📩</h1>
+{% if success %}
+<div class="card lime-glow"><h3>Thanks {{ name }}! 🔥</h3><p>Your message is saved. We usually reply within a day.</p><br><a href="/" class="btn btn-lime">BACK HOME</a></div>
+{% else %}
+<p style="color:var(--muted)">Questions, bugs, feature ideas? Drop a line.</p>
+<form method="POST" action="/contact" class="plan-form">
+  <input type="text" name="name" placeholder="Your name" required>
+  <input type="email" name="email" placeholder="Your email" required>
+  <textarea name="message" placeholder="Your message" rows="6" required></textarea>
+  <button type="submit">SEND MESSAGE →</button>
+</form>
+{% endif %}
+</main>
+{% endblock %}

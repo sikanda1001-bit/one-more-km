@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Running Tools - Pace, Predictor, Zones{% endblock %}
+{% block content %}
+<div class="eyebrow"><span class="pulse-dot"></span> Garmin-style lab</div>
+<h1 style="font-size:clamp(52px,7vw,84px)">PACE LAB <span class="accent">⚡</span></h1>
+<p style="color:var(--muted)">Enter a recent run. Get pace, Riegel race predictions & personal training zones.</p>
+
+<form action="/tools" method="POST" class="plan-form">
+  <div class="field-group"><p class="field-label">Distance (km)</p><input type="number" name="distance" step="0.1" min="0.1" placeholder="e.g. 5" required></div>
+  <div class="field-group"><p class="field-label">Time</p>
+    <div class="time-input-row">
+      <div class="time-input"><input type="number" name="minutes" min="0" placeholder="Min" required></div>
+      <div class="time-input"><input type="number" name="seconds" min="0" max="59" placeholder="Sec" required></div>
+    </div>
+  </div>
+  <button type="submit">CALCULATE →</button>
+</form>
+
+{% if result %}
+<div class="pace-hero">
+  <div class="field-label" style="text-align:center">Your pace</div>
+  <div class="pace-value">{{ result.pm }}:{{ "%02d"|format(result.ps) }}</div>
+  <div class="pace-unit">per km • from {{ result.distance }} km</div>
+</div>
+
+<div class="grid2">
+  <div class="card"><span class="tag orange">Riegel formula</span><h3>Race Predictor 🏁</h3>
+    <div style="display:grid;gap:10px;margin-top:12px">
+      <div class="log-row"><b>5K</b><span>{{ predictions[5].minutes }}:{{ "%02d"|format(predictions[5].seconds) }}{% if predictions[5].hours %}{{ predictions[5].hours }}h {% endif %}</span></div>
+      <div class="log-row"><b>10K</b><span>{% if predictions[10].hours %}{{ predictions[10].hours }}h {% endif %}{{ predictions[10].minutes }}:{{ "%02d"|format(predictions[10].seconds) }}</span></div>
+      <div class="log-row"><b>Half</b><span>{% if predictions[21.0975].hours %}{{ predictions[21.0975].hours }}h {% endif %}{{ predictions[21.0975].minutes }}:{{ "%02d"|format(predictions[21.0975].seconds) }}</span></div>
+      <div class="log-row"><b>Marathon</b><span>{% if predictions[42.195].hours %}{{ predictions[42.195].hours }}h {% endif %}{{ predictions[42.195].minutes }}:{{ "%02d"|format(predictions[42.195].seconds) }}</span></div>
+    </div>
+  </div>
+  <div class="card"><span class="tag blue">Like Strava zones</span><h3>Training Zones 🎯</h3>
+    <div style="display:grid;gap:10px;margin-top:12px">
+    {% for z in zones %}
+      <div style="background:#0F0F14;border:1px solid var(--border);border-radius:12px;padding:12px 14px"><b>{{ z.name }}</b> <span style="color:var(--lime);font-weight:800">{{ z.lo }} – {{ z.hi }}/km</span><br><small style="color:var(--muted)">{{ z.desc }}</small></div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+<br><a href="/program" class="btn btn-lime" style="width:100%">BUILD PLAN FROM THIS PACE →</a>
+{% endif %}
+{% endblock %}

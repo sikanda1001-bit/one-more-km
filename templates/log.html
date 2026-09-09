@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Log a Run - One More KM{% endblock %}
+{% block content %}
+<main class="narrow" style="padding:0">
+<div class="eyebrow"><span class="pulse-dot"></span> Strava-style logger</div>
+<h1 style="font-size:clamp(52px,7vw,84px)">LOG A RUN ➕</h1>
+<p style="color:var(--muted)">Record distance + time. We auto-calc pace, update dashboard, streak & chart.</p>
+<form action="/log" method="POST" class="plan-form">
+  <div class="field-group">
+    <p class="field-label">Date</p>
+    <input type="date" name="date" value="{{ today }}" required>
+  </div>
+  <div class="field-group">
+    <p class="field-label">Distance (km)</p>
+    <input type="number" name="distance" step="0.1" min="0.1" max="200" placeholder="e.g. 5.2" required>
+  </div>
+  <div class="field-group">
+    <p class="field-label">Time</p>
+    <div class="time-input-row">
+      <div class="time-input"><input type="number" name="minutes" min="0" max="600" placeholder="Min" required><p class="days-caption">Minutes</p></div>
+      <div class="time-input"><input type="number" name="seconds" min="0" max="59" placeholder="Sec" required><p class="days-caption">Seconds</p></div>
+    </div>
+  </div>
+  <div class="field-group">
+    <p class="field-label">Notes (optional)</p>
+    <input type="text" name="notes" maxlength="300" placeholder="e.g. Easy morning loop, felt strong">
+  </div>
+  <button type="submit" class="cta-button">SAVE RUN →</button>
+  <p class="days-caption" style="text-align:center">Tip: log daily to build your streak 🔥 and unlock badges.</p>
+</form>
+</main>
+{% endblock %}

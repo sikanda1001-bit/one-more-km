@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}One More KM - Run Further{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <div class="brand-mark">➤</div>
+      <div class="brand-name">ONE MORE <span>KM</span></div>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="{% if request.path=='/' %}active{% endif %}">Home</a>
+      <a href="/dashboard" class="{% if request.path=='/dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="/program" class="{% if request.path in ['/program','/generate'] %}active{% endif %}">Plans</a>
+      <a href="/log" class="{% if request.path=='/log' %}active{% endif %}">Log Run</a>
+      <a href="/challenges" class="{% if request.path=='/challenges' %}active{% endif %}">Challenges</a>
+      <a href="/tools" class="{% if request.path=='/tools' %}active{% endif %}">Tools</a>
+      <a href="/beginner" class="{% if request.path=='/beginner' %}active{% endif %}">Beginner</a>
+      <a href="/guidance" class="{% if request.path=='/guidance' %}active{% endif %}">Recovery</a>
+      <a href="/about" class="{% if request.path=='/about' %}active{% endif %}">About</a>
+      <a href="/contact" class="{% if request.path=='/contact' %}active{% endif %}">Contact</a>
+      <a href="/program" class="nav-cta">START PLAN →</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+{% block content %}{% endblock %}
+</main>
+
+<nav class="mobile-nav">
+  <a href="/" class="{% if request.path=='/' %}active{% endif %}"><span>🏠</span>Home</a>
+  <a href="/dashboard" class="{% if request.path=='/dashboard' %}active{% endif %}"><span>📊</span>Stats</a>
+  <a href="/log" class="{% if request.path=='/log' %}active{% endif %}"><span>➕</span>Log</a>
+  <a href="/program" class="{% if request.path=='/program' %}active{% endif %}"><span>🗓️</span>Plan</a>
+  <a href="/challenges" class="{% if request.path=='/challenges' %}active{% endif %}"><span>🏆</span>Race</a>
+</nav>
+
+<footer>
+  <div class="foot-inner">
+    <div><b style="font-family:'Bebas Neue';font-size:22px;letter-spacing:1px;color:#fff">ONE MORE KM</b><br>Start where you are. Run what you can. Improve gradually.</div>
+    <div>Strava-style tracking • NRC-style plans • 2026 dark design<br><a href="/login" style="color:#6B7280">Admin login</a> • <a href="/contact" style="color:#6B7280">Contact</a></div>
+  </div>
+</footer>
+<script>
+document.querySelectorAll('.join-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    b.classList.toggle('joined');
+    b.textContent = b.classList.contains('joined') ? '✓ Joined — Good luck!' : 'Join Challenge';
+  });
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
