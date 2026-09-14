@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SikandX — Shared Demo</title>
+<style>
+:root{--black:#0a0a0b;--panel:#131316;--line:#2a2417;--gold:#d4af37;--gold2:#f5d67b;--white:#f8f7f4;--muted:#a8a29e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 500px at 50% -10%,#2b230f 0%,var(--black) 55%);color:var(--white);font-family:Segoe UI,Arial,sans-serif}
+.top{border-bottom:1px solid var(--line);background:rgba(10,10,11,.85);position:sticky;top:0}
+.top-in{max-width:1000px;margin:auto;display:flex;align-items:center;gap:14px;padding:14px 18px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--gold2),var(--gold) 60%,#8a6d1c);display:flex;align-items:center;justify-content:center;color:#000;font-weight:900;font-size:22px}
+.brand{font-weight:900;letter-spacing:3px;font-size:22px}.brand span{color:var(--gold2)}
+.tag{font-size:12px;color:var(--muted);letter-spacing:1px}
+.pill{margin-left:auto;font-size:12px;border:1px solid var(--gold);color:var(--gold2);border-radius:20px;padding:5px 12px}
+.wrap{max-width:1000px;margin:auto;padding:20px 18px 60px}
+.banner{border:1px solid var(--gold);background:#1c1607;color:var(--gold2);border-radius:12px;padding:10px 14px;font-size:13px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h3{margin:0 0 10px;font-size:13px;letter-spacing:2px;color:var(--gold2)}
+.big{font-size:30px;font-weight:900}.gold{color:var(--gold2)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:10px 0}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:1px}
+input{background:#000;border:1px solid #3a3220;color:var(--white);border-radius:10px;padding:10px;width:100%}
+.btn{background:linear-gradient(135deg,var(--gold2),var(--gold));border:0;color:#000;font-weight:900;border-radius:10px;padding:11px 14px;cursor:pointer}
+.btn2{background:transparent;border:1px solid var(--gold);color:var(--gold2);font-weight:700;border-radius:10px;padding:11px 14px;cursor:pointer}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.note{border:1px solid #7c5a12;background:#221a08;color:var(--gold2);padding:10px 12px;border-radius:10px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #262019;text-align:left}
+.buy{color:#4ade80;font-weight:800}.sell{color:#f87171;font-weight:800}
+.mut{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+<div class="logo">SX</div>
+<div><div class="brand">SIKAND<span>X</span></div><div class="tag">XAUUSD • SUPPLY &amp; DEMAND • SHARED DEMO</div></div>
+<div class="pill">PRIVATE LINK</div>
+</div></div>
+<div class="wrap">
+<div class="banner">Shared demonstration environment — strategy backtests and sample-feed signals only. No broker connection, no live trading. The full bot runs privately.</div>
+{% if note %}<div class="note">{{ note }}</div>{% endif %}
+<div class="card">
+<h3>CONTROL DESK</h3>
+<form method="post" action="/backtest">
+<div class="form">
+<div><label>ACCOUNT BASE</label><input name="balance" type="number" step="any" value="{{ cfg.start_balance }}"></div>
+<div><label>EQUITY TARGET</label><input name="target" type="number" step="any" value="{{ cfg.equity_target }}"></div>
+<div><label>MAX POSITIONS</label><input name="max_positions" type="number" value="{{ cfg.max_total_positions }}"></div>
+<div><label>MIN SCORE</label><input name="min_score" type="number" value="{{ cfg.min_signal_score }}"></div>
+<div><label>BARS 300–800</label><input name="bars" type="number" value="600"></div>
+</div>
+<div class="btnrow">
+<button class="btn" type="submit">RUN BACKTEST</button>
+<button class="btn2" type="submit" formaction="/signal">CHECK SIGNAL</button>
+</div>
+</form>
+<form method="post" action="/logout" style="margin-top:8px"><button class="btn2" type="submit">LOCK DEMO</button></form>
+</div>
+<div class="grid">
+<div class="card"><h3>SIGNAL</h3>
+{% if signal %}
+<div class="big">{{ signal.side|upper if signal.side else "NO TRADE" }}</div>
+<div>{{ signal.price }} • score {{ signal.score }} • <span class="gold">{{ signal.bias_label }}</span> ({{ signal.bias_score }})</div>
+{% if signal.side %}<div class="mut">SL {{ signal.sl }} • TP {{ signal.tp }}</div>{% endif %}
+<div class="mut">{{ signal.reasons|join(" • ") }}</div>
+<div class="mut">{{ signal.src }}</div>
+{% else %}<div class="mut">No signal check yet.</div>{% endif %}
+</div>
+<div class="card"><h3>BACKTEST</h3>
+{% if backtest %}
+<div class="big gold">{{ backtest.equity }} <span class="mut">/ {{ backtest.target }}</span></div>
+<div>{{ backtest.trades }} trades • {{ backtest.wins }} wins • {{ backtest.win_rate }}% • realized {{ backtest.realized }}</div>
+<div>{% if backtest.halted %}<b class="gold">HALTED at target</b>{% else %}<span class="mut">open {{ backtest.open }} • {{ backtest.bars }} bars</span>{% endif %}</div>
+{% else %}<div class="mut">No backtest yet.</div>{% endif %}
+</div>
+</div>
+{% if backtest and backtest.positions %}
+<div class="card" style="margin-top:14px"><h3>POSITIONS — first {{ backtest.positions|length }} of {{ backtest.total }}</h3>
+<table><tr><th>#</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Lots</th><th>Status</th><th>PnL</th></tr>
+{% for p in backtest.positions %}
+<tr><td>{{ p.id }}</td><td class="{{ p.side }}">{{ p.side|upper }}</td><td>{{ p.entry }}</td><td>{{ p.sl }}</td><td>{{ p.tp }}</td><td>{{ p.lots }}</td><td>{{ p.status }}</td><td>{{ p.pnl }}</td></tr>
+{% endfor %}</table>
+</div>
+{% endif %}
+</div>
+</body>
+</html>
