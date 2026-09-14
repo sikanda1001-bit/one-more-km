@@ -1,15 +1,13 @@
-"""SikandX shared demo for Vercel — read-only strategy demo, no live trading.
+"""SikandX public demo for Vercel — read-only strategy demo, no live trading.
 
-Differences from the private local bot (sikandx/app.py):
-  - No broker connection, no credentials, no order routing, no command execution.
-  - Sample-data backtests (capped for serverless timeouts) + sample-feed signals only.
-  - Access-code gate: every page requires the shared code (SIKANDX_ACCESS_CODE).
-  - Stateless: nothing persists between requests except the signed session cookie.
+Public build: no access gate. Anyone with the link can run sample-data
+backtests and sample-feed signals. There is deliberately no broker
+connection, no credentials, no order routing and no command execution —
+the full trading bot runs privately on the owner's machine.
 
 Vercel entry: api/sikandx.py imports `app` from here.
 Local preview: python -m sikandx.demo_web (port 5002).
 """
-import hmac
 import os
 import sys
 
@@ -26,29 +24,10 @@ from sikandx.data_mt5 import resample_m1_to
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEMO_TEMPLATES = os.path.join(HERE, "templates_demo")
 
-DEV_CODE = "sikandx-demo"  # local preview only; production must set SIKANDX_ACCESS_CODE
-
 app = Flask(__name__, template_folder=DEMO_TEMPLATES)
 app.secret_key = os.environ.get("SIKANDX_SECRET", "sikandx-demo-secret-change-me")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-
-
-def _code_ok(provided: str) -> bool:
-    expected = os.environ.get("SIKANDX_ACCESS_CODE", DEV_CODE)
-    return hmac.compare_digest(str(provided or ""), str(expected))
-
-
-@app.before_request
-def _gate():
-    if request.path.startswith("/static"):
-        return None
-    if request.endpoint in ("unlock",):
-        return None
-    if session.get("sikandx_demo_auth") is True:
-        return None
-    # allow POSTing the code without a session yet
-    return render_template("gate.html", error="")
 
 
 @app.route("/", methods=["GET"])
@@ -87,21 +66,6 @@ def _cfg_from_form(form):
                         max_buys=d["max_total_positions"], max_sells=d["max_total_positions"],
                         min_signal_score=d["min_signal_score"])
     return cfg
-
-
-@app.route("/unlock", methods=["POST"])
-def unlock():
-    if _code_ok(request.form.get("code", "")):
-        session["sikandx_demo_auth"] = True
-        session["demo_cfg"] = _cfg_defaults()
-        return redirect("/")
-    return render_template("gate.html", error="Incorrect access code."), 401
-
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return redirect("/")
 
 
 @app.route("/backtest", methods=["POST"])
