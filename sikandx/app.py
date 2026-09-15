@@ -88,8 +88,10 @@ def _frames(cfg, bars=600):
         return d["M1"], d["M5"], d["M15"], "MT5 feed"
     except Exception as e:
         df = make_sample_gold_m1(n=bars, seed=7)
-        return (df.tail(400), resample_m1_to(df, "5min").tail(400),
-                resample_m1_to(df, "15min").tail(400), f"sample feed (MT5 unavailable: {e})")
+        return (df.tail(400).reset_index(drop=True),
+                resample_m1_to(df, "5min").tail(400).reset_index(drop=True),
+                resample_m1_to(df, "15min").tail(400).reset_index(drop=True),
+                f"sample feed (MT5 unavailable: {e})")
 
 
 def _snapshot():

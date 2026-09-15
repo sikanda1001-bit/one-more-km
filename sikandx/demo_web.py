@@ -96,7 +96,9 @@ def signal():
     cfg = _cfg_from_form(request.form)
     try:
         df = make_sample_gold_m1(n=600, seed=7)
-        m1, m5, m15 = df.tail(400), resample_m1_to(df, "5min").tail(400), resample_m1_to(df, "15min").tail(400)
+        m1 = df.tail(400).reset_index(drop=True)
+        m5 = resample_m1_to(df, "5min").tail(400).reset_index(drop=True)
+        m15 = resample_m1_to(df, "15min").tail(400).reset_index(drop=True)
         sig = SikandXStrategy(cfg).signal(m1, m5, m15)
         bias = sig.get("bias", {})
         s = dict(src="sample feed (shared demo)", price=round(float(m1["close"].iloc[-1]), 2),

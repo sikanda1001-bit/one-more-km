@@ -17,14 +17,19 @@ def atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
 
 
 def find_swings(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
-    """Mark swing highs / lows (vectorized)."""
-    out = df.copy()
-    h_s = pd.Series(out["high"].to_numpy())
-    l_s = pd.Series(out["low"].to_numpy())
+    """Mark swing highs / lows (vectorized).
+
+    Masks are materialized as fresh writable arrays: under copy-on-write
+    semantics (pandas 3 default) `.to_numpy()` on a comparison may return a
+    read-only view, so `np.array(..., copy=True)` is required before masking.
+    """
+    out = df.copy(deep=True)
+    h_s = pd.Series(np.asarray(out["high"].to_numpy(), dtype=float))
+    l_s = pd.Series(np.asarray(out["low"].to_numpy(), dtype=float))
     roll_max = h_s.rolling(window * 2 + 1, center=True, min_periods=1).max()
     roll_min = l_s.rolling(window * 2 + 1, center=True, min_periods=1).min()
-    sh = (h_s == roll_max).to_numpy()
-    sl = (l_s == roll_min).to_numpy()
+    sh = np.array(h_s.to_numpy() == roll_max.to_numpy(), dtype=bool, copy=True)
+    sl = np.array(l_s.to_numpy() == roll_min.to_numpy(), dtype=bool, copy=True)
     # edges don't have a full window — ignore them
     sh[:window] = False
     sh[-window:] = False
@@ -105,20 +110,25 @@ def detect_zones(df: pd.DataFrame, swing_window=5, base_max_bars=6,
 
     # Fallback: if base-impulse found almost nothing, use recent swing
     # highs/lows as supply/demand so the bot can still trade.
+    # Positional indexing throughout: safe for sliced frames with arbitrary labels.
     if len(kept) < 3:
         try:
             sw = find_swings(df, max(3, swing_window - 2))
             ref_atr = float(a.iloc[-1]) if float(a.iloc[-1]) > 0 else 0.3
             half = ref_atr * 0.3
-            for idx in sw.index[sw["swing_low"]].tolist()[-4:]:
-                px = float(df["low"].iloc[idx])
+            low_arr = df["low"].to_numpy()
+            high_arr = df["high"].to_numpy()
+            low_pos = np.where(sw["swing_low"].to_numpy())[0][-4:]
+            high_pos = np.where(sw["swing_high"].to_numpy())[0][-4:]
+            for k in low_pos:
+                px = float(low_arr[int(k)])
                 kept.append(dict(type="demand", top=px + half, bottom=px - half,
-                                 index=int(idx), end_index=int(idx),
+                                 index=int(k), end_index=int(k),
                                  score=50.0, origin="swing-fallback"))
-            for idx in sw.index[sw["swing_high"]].tolist()[-4:]:
-                px = float(df["high"].iloc[idx])
+            for k in high_pos:
+                px = float(high_arr[int(k)])
                 kept.append(dict(type="supply", top=px + half, bottom=px - half,
-                                 index=int(idx), end_index=int(idx),
+                                 index=int(k), end_index=int(k),
                                  score=50.0, origin="swing-fallback"))
             kept.sort(key=lambda z: z["index"])
         except Exception:
