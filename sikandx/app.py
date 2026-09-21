@@ -33,6 +33,18 @@ from sikandx.zones import atr
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
 app.secret_key = os.environ.get("SIKANDX_SECRET", "sikandx-gold-key")
 
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+
+@app.after_request
+def _cors(resp):
+    # Mobile app (Capacitor WebView / file://) needs cross-origin access to /api/*
+    if request.path.startswith("/api/"):
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
 STATE = {
     "cfg": SikandXConfig(),
     "backtest": None,
@@ -445,6 +457,9 @@ def status():
     b, s = STATE["backtest"], STATE["signal"]
     snap = STATE["acct"]
     return jsonify({
+        "app": "SikandX",
+        "symbol": STATE["cfg"].symbol,
+        "timeframes": ["M1", "M5", "M15"],
         "cfg": {"balance": STATE["cfg"].start_balance, "target": STATE["cfg"].equity_target,
                 "max_positions": STATE["cfg"].max_total_positions,
                 "min_score": STATE["cfg"].min_signal_score},
@@ -458,5 +473,96 @@ def status():
         "chat": STATE["chat"][-10:]})
 
 
+@app.route("/api/signal", methods=["GET", "POST", "OPTIONS"])
+def api_signal():
+    """Mobile entry: run a signal scan and return JSON (no HTML)."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True) or {}
+    form = {**request.form.to_dict(), **{k: str(v) for k, v in payload.items()}}
+    if form:
+        _update_cfg(form)
+    cfg = STATE["cfg"]
+    try:
+        m1, m5, m15, src = _frames(cfg)
+        sig = SikandXStrategy(cfg).signal(m1, m5, m15)
+        bias = sig.get("bias", {})
+        return jsonify({"ok": True, "src": src,
+                        "price": round(float(m1["close"].iloc[-1]), 2),
+                        "side": sig.get("side"), "score": sig.get("score"),
+                        "sl": round(float(sig["sl"]), 2) if sig.get("sl") else None,
+                        "tp": round(float(sig["tp"]), 2) if sig.get("tp") else None,
+                        "reasons": (sig.get("reasons") or [])[:6],
+                        "bias_label": bias.get("label") if isinstance(bias, dict) else "?",
+                        "bias_score": bias.get("score") if isinstance(bias, dict) else 0,
+                        "flags": {"paused": STATE["paused"], "halted": STATE["halted"],
+                                  "auto": STATE["auto"]}})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:300]}), 500
+
+
+@app.route("/api/backtest", methods=["POST", "OPTIONS"])
+def api_backtest():
+    """Mobile entry: run a sample-feed backtest and return JSON summary."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True) or {}
+    form = {**request.form.to_dict(), **{k: str(v) for k, v in payload.items()}}
+    cfg = _update_cfg(form)
+    try:
+        bars = max(500, min(4000, int((payload.get("bars") or request.form.get("bars", 1500)))))
+    except (ValueError, TypeError):
+        bars = 1500
+    try:
+        res = run_backtest(make_sample_gold_m1(n=bars), cfg)
+        return jsonify({"ok": True, "bars": res["bars"], "trades": res["trades"],
+                        "wins": res["wins"], "win_rate": res["win_rate"],
+                        "realized": res["realized"], "equity": res["equity"],
+                        "target": res["target"], "halted": res["halted"], "open": res["open"]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:300]}), 500
+
+
+@app.route("/api/command", methods=["POST", "OPTIONS"])
+def api_command():
+    """Mobile entry: send a plain-language command, get the bot reply as JSON."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text", "") if isinstance(payload, dict) else ""
+    if not text:
+        text = request.form.get("text", "")
+    _say("user", text if text.strip() else "(empty)")
+    try:
+        p = parse_command(text)
+        reply = _apply_parsed(p)
+    except Exception as e:
+        reply = f"Command failed: {e}"
+    _say("bot", reply)
+    return jsonify({"ok": True, "reply": reply,
+                    "flags": {"paused": STATE["paused"], "halted": STATE["halted"],
+                              "auto": STATE["auto"],
+                              "target": STATE["cfg"].equity_target}})
+
+
+@app.route("/manifest.webmanifest")
+def manifest():
+    from flask import send_from_directory
+    return send_from_directory(STATIC_DIR, "manifest.webmanifest",
+                               mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def sw():
+    from flask import send_from_directory
+    return send_from_directory(STATIC_DIR, "sw.js",
+                               mimetype="application/javascript")
+
+
 if __name__ == "__main__":
-    app.run(debug=False, port=5001)
+    import argparse
+    _ap = argparse.ArgumentParser(description="SikandX private trading bot")
+    _ap.add_argument("--host", default=os.environ.get("SIKANDX_HOST", "0.0.0.0"))
+    _ap.add_argument("--port", type=int, default=int(os.environ.get("SIKANDX_PORT", "5001")))
+    _aa = _ap.parse_args()
+    app.run(debug=False, host=_aa.host, port=_aa.port)

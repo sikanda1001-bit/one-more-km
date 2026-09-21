@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SikandX — Gold Trading Bot</title>
+<meta name="theme-color" content="#0a0a0b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SikandX">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+:root{--black:#0a0a0b;--panel:#131316;--line:#2a2417;--gold:#d4af37;--gold2:#f5d67b;--white:#f8f7f4;--muted:#a8a29e;--green:#4ade80;--red:#f87171}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(900px 380px at 50% -10%,#2b230f 0%,var(--black) 55%);color:var(--white);font-family:Segoe UI,Arial,system-ui,sans-serif;min-height:100vh;padding-bottom:86px}
+.top{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);background:rgba(10,10,11,.92);backdrop-filter:blur(10px)}
+.top-in{max-width:640px;margin:auto;display:flex;align-items:center;gap:12px;padding:12px 16px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--gold2),var(--gold) 60%,#8a6d1c);display:flex;align-items:center;justify-content:center;color:#000;font-weight:900;font-size:19px;flex:none}
+.brand{font-weight:900;letter-spacing:3px;font-size:20px}.brand span{color:var(--gold2)}
+.tag{font-size:11px;color:var(--muted);letter-spacing:1px}
+.pill{margin-left:auto;font-size:11px;border:1px solid var(--gold);color:var(--gold2);border-radius:20px;padding:5px 10px;white-space:nowrap}
+.pill.live{border-color:var(--green);color:var(--green)}
+.wrap{max-width:640px;margin:auto;padding:14px 14px 30px}
+.hero{border:1px solid var(--line);border-radius:18px;padding:18px;background:linear-gradient(180deg,#17140b,#0e0e10);margin:10px 0 14px}
+.hero h1{margin:0;font-size:28px;letter-spacing:1px}.hero h1 em{color:var(--gold2);font-style:normal}
+.hero p{color:var(--muted);margin:8px 0 0;font-size:13.5px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:12px}
+.card h3{margin:0 0 10px;font-size:12px;letter-spacing:2px;color:var(--gold2)}
+.big{font-size:32px;font-weight:900}.gold{color:var(--gold2)}
+.buy{color:var(--green);font-weight:800}.sell{color:var(--red);font-weight:800}
+.mut{color:var(--muted);font-size:12.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.form .full{grid-column:1/-1}
+label{font-size:10.5px;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:1px}
+input,select{background:#000;border:1px solid #3a3220;color:var(--white);border-radius:10px;padding:12px;width:100%;font-size:15px}
+input:focus{outline:none;border-color:var(--gold)}
+.btn{background:linear-gradient(135deg,var(--gold2),var(--gold));border:0;color:#000;font-weight:900;border-radius:10px;padding:13px 14px;cursor:pointer;font-size:15px;width:100%}
+.btn:active{transform:scale(.98)}
+.btn2{background:transparent;border:1px solid var(--gold);color:var(--gold2);font-weight:700;border-radius:10px;padding:12px;cursor:pointer;font-size:14px;flex:1}
+.btn2:active{background:#221a08}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.note{border:1px solid #7c5a12;background:#221a08;color:var(--gold2);padding:10px 12px;border-radius:10px;margin:10px 0;font-size:13px}
+.warn{border:1px solid #7f1d1d;background:#1c0a0a;color:#fca5a5;padding:10px 12px;border-radius:10px;margin:8px 0;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #262019;text-align:left}
+.chat{max-height:240px;overflow-y:auto;border:1px solid #2a2417;border-radius:10px;padding:10px;background:#000;margin:8px 0}
+.umsg{text-align:right;margin:6px 0}.umsg span{background:#3a2f10;border:1px solid var(--gold);border-radius:10px;padding:6px 10px;display:inline-block;font-size:13.5px}
+.bmsg{margin:6px 0}.bmsg span{background:#141414;border:1px solid #333;border-radius:10px;padding:6px 10px;display:inline-block;font-size:13.5px}
+.tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(16,14,8,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:6px 6px calc(8px + env(safe-area-inset-bottom))}
+.tabs-in{max-width:640px;margin:auto;display:flex;gap:4px}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:700;padding:8px 2px;border-radius:10px;cursor:pointer}
+.tab span{display:block;font-size:19px}
+.tab.active{color:var(--gold2);background:rgba(212,175,55,.1)}
+.view{display:none}.view.active{display:block}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #221d12;font-size:13.5px}
+.kv b{color:var(--gold2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:11.5px;border:1px solid #3a3220;border-radius:999px;padding:5px 10px;color:var(--muted)}
+footer{max-width:640px;margin:18px auto 0;padding:0 16px;color:var(--muted);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+<div class="logo">SX</div>
+<div><div class="brand">SIKAND<span>X</span></div><div class="tag">XAUUSD • SUPPLY &amp; DEMAND</div></div>
+<div class="pill" id="connPill">OFFLINE</div>
+</div></div>
+
+<div class="wrap">
+<div class="hero">
+<h1>Trade Gold with <em>precision.</em></h1>
+<p id="heroSub">Connect your private bot server for live signals, or use the shared demo feed. XAUUSD only • M1/M5/M15 • backtest + paper first.</p>
+</div>
+
+<!-- STATUS -->
+<section class="view active" id="v-status">
+<div class="card"><h3>ACCOUNT STATUS</h3>
+<div id="statusBox"><div class="mut">Not connected yet — open Settings, enter your server URL, then tap Refresh.</div></div>
+<div class="btnrow"><button class="btn2" id="btnRefresh">REFRESH STATUS</button></div>
+</div>
+<div class="card"><h3>LAST SIGNAL</h3><div id="miniSignal"><div class="mut">No scan yet.</div></div></div>
+</section>
+
+<!-- SIGNAL -->
+<section class="view" id="v-signal">
+<div class="card"><h3>SIGNAL SCANNER</h3>
+<div class="mut">Scans M1/M5/M15 supply &amp; demand, BOS, reversals and trendlines on the connected server.</div>
+<div class="btnrow"><button class="btn" id="btnSignal">SCAN NOW</button></div>
+<div id="signalBox" style="margin-top:10px"><div class="mut">No scan yet.</div></div>
+</div>
+</section>
+
+<!-- BACKTEST -->
+<section class="view" id="v-backtest">
+<div class="card"><h3>BACKTEST</h3>
+<div class="form">
+<div><label>ACCOUNT BASE</label><input id="fBalance" type="number" value="100"></div>
+<div><label>EQUITY TARGET</label><input id="fTarget" type="number" value="300"></div>
+<div><label>MAX POSITIONS</label><input id="fMax" type="number" value="5"></div>
+<div><label>MIN SCORE</label><input id="fScore" type="number" value="45"></div>
+<div class="full"><label>BARS</label><input id="fBars" type="number" value="600"></div>
+</div>
+<div class="btnrow"><button class="btn" id="btnBacktest">RUN BACKTEST</button></div>
+<div id="btBox" style="margin-top:10px"><div class="mut">No backtest yet.</div></div>
+</div>
+</section>
+
+<!-- COMMANDS -->
+<section class="view" id="v-cmd">
+<div class="card"><h3>COMMAND DESK</h3>
+<div id="demoWarn" class="warn" style="display:none">Demo server is read-only — trading commands need your private bot server (see Settings).</div>
+<div class="chat" id="chatBox"><div class="mut">Try: status • go long on gold • go short 0.02 • close all • pause • resume • set target 500 • enable auto</div></div>
+<div class="row"><input id="cmdText" placeholder="Type a command…" autocomplete="off" style="flex:1"><button class="btn2" id="btnSend" style="flex:none;padding:12px 18px">SEND</button></div>
+<div class="chips" id="quickChips"></div>
+</div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings">
+<div class="card"><h3>SERVER CONNECTION</h3>
+<div class="form">
+<div class="full"><label>MODE</label><select id="sMode"><option value="private">Private bot server (full trading)</option><option value="demo">Shared demo feed (signals only)</option></select></div>
+<div class="full"><label>PRIVATE SERVER URL (your PC: http://192.168.x.x:5001)</label><input id="sPrivate" placeholder="http://192.168.1.50:5001"></div>
+<div class="full"><label>DEMO SERVER URL (Vercel: https://your-site.vercel.app/sikandx)</label><input id="sDemo" placeholder="https://…/sikandx"></div>
+</div>
+<div class="btnrow"><button class="btn" id="btnSave">SAVE &amp; CONNECT</button></div>
+<div id="setMsg" style="margin-top:8px"></div>
+</div>
+<div class="card"><h3>RISK NOTICE</h3>
+<div class="mut">Trading XAUUSD on leverage is high risk. Demo/paper modes first. Live execution on the private server requires explicit CONFIRM LIVE and is never enabled implicitly. This app is not financial advice.</div>
+</div>
+</section>
+
+<footer>SIKANDX • XAUUSD only • black / gold / white • v1.0</footer>
+</div>
+
+<nav class="tabs"><div class="tabs-in">
+<button class="tab active" data-v="v-status"><span>◉</span>Status</button>
+<button class="tab" data-v="v-signal"><span>◈</span>Signal</button>
+<button class="tab" data-v="v-backtest"><span>▣</span>Backtest</button>
+<button class="tab" data-v="v-cmd"><span>✎</span>Commands</button>
+<button class="tab" data-v="v-settings"><span>⚙</span>Settings</button>
+</div></nav>
+<script src="./app.js"></script>
+</body>
+</html>

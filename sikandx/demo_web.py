@@ -29,6 +29,17 @@ app.secret_key = os.environ.get("SIKANDX_SECRET", "sikandx-demo-secret-change-me
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
+HERE_STATIC = os.path.join(HERE, "static")
+
+
+@app.after_request
+def _cors(resp):
+    if request.path.startswith("/api/"):
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
 
 @app.route("/", methods=["GET"])
 def home():
@@ -112,6 +123,95 @@ def signal():
     except Exception as e:
         s, note = None, f"Signal check failed: {e}"
     return render_template("index.html", cfg=session["demo_cfg"], backtest=None, signal=s, note=note)
+
+
+@app.route("/api/demo-signal", methods=["GET", "POST", "OPTIONS"])
+def api_demo_signal():
+    """Public demo JSON for the Android app (sample feed only)."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True) or {}
+    merged = {**request.form.to_dict(), **{k: str(v) for k, v in payload.items()}}
+    d = dict(session.get("demo_cfg") or _cfg_defaults())
+    for key, field in (("balance", "start_balance"), ("target", "equity_target"),
+                       ("max_positions", "max_total_positions"), ("min_score", "min_signal_score")):
+        if key in merged:
+            try:
+                d[field] = float(merged[key]) if key in ("balance", "target") else max(0, min(100, int(float(merged[key]))))
+            except (ValueError, TypeError):
+                pass
+    cfg = SikandXConfig(**{k: d[k] for k in ("start_balance", "equity_target")},
+                        max_total_positions=int(d["max_total_positions"]),
+                        max_buys=int(d["max_total_positions"]), max_sells=int(d["max_total_positions"]),
+                        min_signal_score=int(d["min_signal_score"]))
+    try:
+        from flask import jsonify
+        df = make_sample_gold_m1(n=600, seed=7)
+        m1 = df.tail(400).reset_index(drop=True)
+        m5 = resample_m1_to(df, "5min").tail(400).reset_index(drop=True)
+        m15 = resample_m1_to(df, "15min").tail(400).reset_index(drop=True)
+        sig = SikandXStrategy(cfg).signal(m1, m5, m15)
+        bias = sig.get("bias", {})
+        return jsonify({"ok": True, "app": "SikandX-demo", "symbol": "XAUUSD",
+                        "src": "sample feed (shared demo)",
+                        "price": round(float(m1["close"].iloc[-1]), 2),
+                        "side": sig.get("side"), "score": sig.get("score"),
+                        "sl": round(float(sig["sl"]), 2) if sig.get("sl") else None,
+                        "tp": round(float(sig["tp"]), 2) if sig.get("tp") else None,
+                        "reasons": (sig.get("reasons") or [])[:6],
+                        "bias_label": bias.get("label") if isinstance(bias, dict) else "?",
+                        "bias_score": bias.get("score") if isinstance(bias, dict) else 0})
+    except Exception as e:
+        from flask import jsonify
+        return jsonify({"ok": False, "error": str(e)[:300]}), 500
+
+
+@app.route("/api/demo-backtest", methods=["POST", "OPTIONS"])
+def api_demo_backtest():
+    """Public demo JSON backtest for the Android app (sample feed only)."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    from flask import jsonify
+    payload = request.get_json(silent=True) or {}
+    merged = {**request.form.to_dict(), **{k: str(v) for k, v in payload.items()}}
+    d = dict(session.get("demo_cfg") or _cfg_defaults())
+    for key, field in (("balance", "start_balance"), ("target", "equity_target"),
+                       ("max_positions", "max_total_positions"), ("min_score", "min_signal_score")):
+        if key in merged:
+            try:
+                d[field] = float(merged[key]) if key in ("balance", "target") else max(0, min(100, int(float(merged[key]))))
+            except (ValueError, TypeError):
+                pass
+    cfg = SikandXConfig(**{k: d[k] for k in ("start_balance", "equity_target")},
+                        max_total_positions=int(d["max_total_positions"]),
+                        max_buys=int(d["max_total_positions"]), max_sells=int(d["max_total_positions"]),
+                        min_signal_score=int(d["min_signal_score"]))
+    try:
+        bars = max(300, min(800, int(payload.get("bars") or merged.get("bars", 600))))
+    except (ValueError, TypeError):
+        bars = 600
+    try:
+        res = run_backtest(make_sample_gold_m1(n=bars, seed=7), cfg)
+        return jsonify({"ok": True, "bars": res["bars"], "trades": res["trades"],
+                        "wins": res["wins"], "win_rate": res["win_rate"],
+                        "realized": res["realized"], "equity": res["equity"],
+                        "target": res["target"], "halted": res["halted"], "open": res["open"]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:300]}), 500
+
+
+@app.route("/manifest.webmanifest")
+def manifest():
+    from flask import send_from_directory
+    return send_from_directory(HERE_STATIC, "manifest.webmanifest",
+                               mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def sw():
+    from flask import send_from_directory
+    return send_from_directory(HERE_STATIC, "sw.js",
+                               mimetype="application/javascript")
 
 
 if __name__ == "__main__":

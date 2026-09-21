@@ -4,4 +4,8 @@ __pycache__/
 *.sqlite3
 .env
 venv/
+# SikandX Android (generated, rebuilt in CI)
+sikandax-android/node_modules/
+sikandax-android/android/
+
 

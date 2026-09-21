@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SikandX — Gold Trading Bot</title>
+<meta name="theme-color" content="#0a0a0b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SikandX">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 <style>
 :root{--black:#0a0a0b;--panel:#131316;--line:#2a2417;--gold:#d4af37;--gold2:#f5d67b;--white:#f8f7f4;--muted:#a8a29e}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 500px at 50% -10%,#2b230f 0%,var(--black) 55%);color:var(--white);font-family:Segoe UI,Arial,sans-serif}
@@ -154,5 +163,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </div>
 {% endif %}
 </div>
+<script>
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
+</script>
 </body>
 </html>
